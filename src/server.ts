@@ -62,6 +62,10 @@ async function handleRequest(request: Request): Promise<Response> {
   // Print out x-rate-limit-remaining
   const rateLimitRemaining = response.headers.get('x-rate-limit-remaining')
   console.log(`Rate limit remaining for account: ${rateLimitRemaining}`)
+  // Print rate limit reset converted to a human readable date
+  const rateLimitReset = response.headers.get('x-rate-limit-reset')
+  const rateLimitResetDate = new Date(Number(rateLimitReset) * 1000)
+  console.log(`Rate limit reset for account: ${rateLimitResetDate}`)
 
   return decodedResponse
 }
