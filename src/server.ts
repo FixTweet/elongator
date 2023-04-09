@@ -72,7 +72,6 @@ async function handleRequest(request: Request): Promise<Response> {
 
 function isAllowlisted(apiUrl: string): boolean {
   const allowlist: string[] = [
-    '/1.1/strato/column/None',
     '/2/timeline/conversation'
   ]
 
