@@ -52,6 +52,15 @@ async function handleRequest(request: Request): Promise<Response> {
   const textDecoder = new TextDecoder('utf-8')
   const decodedBody = textDecoder.decode(await response.arrayBuffer()).match(/{.+}/)?.[0] || '{}';
 
+  try {
+    const json = JSON.parse(decodedBody);
+    if (json.errors) {
+      console.log(json.errors);
+    }
+  } catch(e) {
+
+  }
+
   // Create a new Response object with the decoded body
   const decodedResponse = new Response(decodedBody, {
     status: response.status,
