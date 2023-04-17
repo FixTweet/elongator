@@ -24,14 +24,8 @@ async function handleRequest(request: Request): Promise<Response> {
   // Clone the incoming request and modify its headers
   const headers = new Headers(request.headers)
 
-  // Generate a random auth_token cookie value
-  const auth_token = getAuthToken()
-
   // Merge the incoming cookies with the auth_token cookie
-  const existingCookies = request.headers.get('Cookie')
-  const cookies = mergeCookies(existingCookies?.toString(), `auth_token=${auth_token}`)
-  headers.set('Cookie', cookies)
-  headers.delete('Accept-Encoding');
+  const existingCookies = request.headers.get('Cookie');
 
   // Create a new request with the modified properties
   const newRequestInit: RequestInit = {
@@ -42,24 +36,45 @@ async function handleRequest(request: Request): Promise<Response> {
     integrity: request.integrity,
     signal: request.signal
   }
-  const newRequest = new Request(apiUrl, newRequestInit)
 
   // Send the modified request to the Twitter API
-  const response = await fetch(newRequest)
 
   // Read the response body to create a new response with string version of body
   // Decode the response using the TextDecoder API
   const textDecoder = new TextDecoder('utf-8')
-  const decodedBody = textDecoder.decode(await response.arrayBuffer()).match(/{.+}/)?.[0] || '{}';
 
-  try {
-    const json = JSON.parse(decodedBody);
-    if (json.errors) {
-      console.log(json.errors);
+  // Send the modified request to the Twitter API
+  let response: Response;
+  let json: any;
+  let errors: boolean;
+  let decodedBody: string;
+
+  do {
+    errors = false;
+    const auth_token = getAuthToken();
+    const cookies = mergeCookies(existingCookies?.toString(), `auth_token=${auth_token}`);
+    headers.set('Cookie', cookies);
+    headers.delete('Accept-Encoding');
+
+    const newRequest = new Request(apiUrl, newRequestInit);
+    response = await fetch(newRequest);
+
+    // Read the response body to create a new response with string version of body
+    decodedBody = textDecoder.decode(await response.arrayBuffer()).match(/{.+}/)?.[0] || '{}';
+
+    try {
+      json = JSON.parse(decodedBody);
+      if (json.errors) {
+        console.log(json.errors);
+        console.log(`Account is not working, trying another one...`);
+        errors = true;
+      }
+    } catch (e) {
+      console.log('Error parsing JSON:', e);
+      errors = true;
     }
-  } catch(e) {
-
-  }
+  } while (errors);
+ 
 
   // Create a new Response object with the decoded body
   const decodedResponse = new Response(decodedBody, {
