@@ -8,6 +8,10 @@ This implementation is early, as it started because of Twitter's unannounced cha
 
 This method of implementation helps reduce a single point of failure, as [Twitter cannot easily shut down elongator at-will](https://www.engadget.com/twitter-shut-off-its-free-api-and-its-breaking-a-lot-of-apps-222011637.html) without breaking API fundamentals, so preventing FixTweet from functioning with NSFW Tweets will be harder. 
 
+**Warning**: It is possible that Twitter can lock individual accounts. Elongator will auto-recover by picking a new account if it happens to pick a locked account. However, it is important to monitor the Twitter accounts to make sure they work. Elongator will spit out errors in the event an account is locked.
+
+Currently, we do not support automatically logging in to Twitter using the accounts. While the username and password fields are present, the password field is not used yet.
+
 ## Setup
 
 ### Requirements
