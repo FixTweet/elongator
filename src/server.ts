@@ -68,6 +68,8 @@ async function handleRequest(request: Request): Promise<Response> {
         console.log(json.errors);
         console.log(`Account is not working, trying another one...`);
         errors = true;
+      } else {
+        console.log(`Response OK`)
       }
     } catch (e) {
       console.log('Error parsing JSON:', e);
