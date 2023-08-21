@@ -52,7 +52,6 @@ async function handleRequest(request: Request): Promise<Response> {
   do {
     errors = false;
     const { authToken, csrfToken } = getRandomAccount();
-    console.log('previous cookies', existingCookies?.toString());
     let newCookies = `auth_token=${authToken}`;
     /* If GraphQL request, we need to replace x-csrf-token and the ct0 cookie with saved csrfToken
        Unlike REST requests, GraphQL requests require a server csrf token. This restriction does not apply to guest token access. */
@@ -64,8 +63,6 @@ async function handleRequest(request: Request): Promise<Response> {
     const cookies = mergeCookies(existingCookies?.toString(), newCookies);
     headers.set('Cookie', cookies);
     headers.delete('Accept-Encoding');
-
-    console.log(`newRequestInit`, newRequestInit);
 
     newRequestInit.headers = headers;
 
