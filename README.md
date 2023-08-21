@@ -2,11 +2,11 @@
 
 Elongator is an internal proxying service used to circumvent Twitter's restrictions disallowing access to sensitive/NSFW Tweets from the guest API. FixTweet relies on the guest API to provide unauthenticated access to Tweets, so in instances where Twitter excludes Tweets from the guest API, FixTweet will be able to access them through elongator.
 
-FixTweet will redirect requests to Elongator only when the guest API excludes the specified Tweet from its original response. Elongator achieves its purpose by stamping the incoming request with an auth_token from a real Twitter account, and requests are spread out among many accounts for more even rate limit wearing.
+FixTweet will redirect requests to Elongator only when the guest API excludes the specified Tweet from its original response. Elongator achieves its purpose by stamping the incoming request with an auth_token from a real Twitter account, and requests are spread out among many accounts for more even rate limit wearing. For GraphQL requests, we also include valid per-account csrf tokens which is required for GraphQL functionality.
 
-This implementation is early, as it started because of Twitter's unannounced change to their API, and currently does not support re-authing with username and password yet, only existing auth tokens.
+This implementation is still quite basic, as it started because of Twitter's unannounced change to their API, and currently does not support re-authing with username and password yet, only existing auth/csrf tokens.
 
-This method of implementation helps reduce a single point of failure, as [Twitter cannot easily shut down elongator at-will](https://www.engadget.com/twitter-shut-off-its-free-api-and-its-breaking-a-lot-of-apps-222011637.html) without breaking API fundamentals, so preventing FixTweet from functioning with NSFW Tweets will be harder. 
+This method of implementation helps reduce a single point of failure, as Twitter cannot easily shut down elongator at-will without otherwise breaking their API, so preventing FixTweet from functioning with NSFW Tweets is made harder. 
 
 **Warning**: It is possible that Twitter can lock individual accounts. Elongator will auto-recover by picking a new account if it happens to pick a locked account. However, it is important to monitor the Twitter accounts to make sure they work. Elongator will spit out errors in the event an account is locked.
 

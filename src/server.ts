@@ -1,5 +1,6 @@
 type Credentials = {
   authToken: string
+  csrfToken: string
   username: string
   password: string
 }
@@ -24,8 +25,7 @@ async function handleRequest(request: Request): Promise<Response> {
   // Clone the incoming request and modify its headers
   const headers = new Headers(request.headers)
 
-  // Merge the incoming cookies with the auth_token cookie
-  const existingCookies = request.headers.get('Cookie');
+  let existingCookies = request.headers.get('Cookie');
 
   // Create a new request with the modified properties
   const newRequestInit: RequestInit = {
@@ -51,9 +51,17 @@ async function handleRequest(request: Request): Promise<Response> {
 
   do {
     errors = false;
-    const auth_token = getAuthToken();
+    const { authToken, csrfToken } = getRandomAccount();
     console.log('previous cookies', existingCookies?.toString());
-    const cookies = mergeCookies(existingCookies?.toString(), `auth_token=${auth_token}`);
+    let newCookies = `auth_token=${authToken}`;
+    /* If GraphQL request, we need to replace x-csrf-token and the ct0 cookie with saved csrfToken
+       Unlike REST requests, GraphQL requests require a server csrf token. This restriction does not apply to guest token access. */
+    if (apiUrl.includes('graphql')) {
+      existingCookies = existingCookies?.replace(/ct0=(.+?);/, '') || '';
+      newCookies = `auth_token=${authToken}; ct0=${csrfToken}; `;
+      headers.set('x-csrf-token', csrfToken);
+    }
+    const cookies = mergeCookies(existingCookies?.toString(), newCookies);
     headers.set('Cookie', cookies);
     headers.delete('Accept-Encoding');
 
@@ -81,7 +89,10 @@ async function handleRequest(request: Request): Promise<Response> {
         console.log(`Account is not working, trying another one...`);
         errors = true;
       } else {
-        console.log(`Response OK`)
+        console.log(`Response OK`);
+        // Print response and body
+        console.log(`Response: ${response.status} ${response.statusText}`);
+        console.log(`Body: `, decodedBody);
       }
 
       // if attempts over 5, return bad gateway
@@ -116,7 +127,7 @@ async function handleRequest(request: Request): Promise<Response> {
 function isAllowlisted(apiUrl: string): boolean {
   const allowlist: string[] = [
     '/i/api/1.1/strato/column/None/tweetId',
-    // '/i/api/graphql/2ICDjqPd81tulZcYrtpTuQ/TweetResultByRestId'
+    '/i/api/graphql/2ICDjqPd81tulZcYrtpTuQ/TweetResultByRestId'
   ]
 
   const endpointPath = new URL(apiUrl).pathname
@@ -126,11 +137,11 @@ function isAllowlisted(apiUrl: string): boolean {
 }
 
 
-function getAuthToken(): string {
+function getRandomAccount(): Credentials {
   const randomIndex = Math.floor(Math.random() * credentials.accounts.length)
   const randomAccount = credentials.accounts[randomIndex]
   console.log(`Using account ${randomAccount.username}`);
-  return randomAccount.authToken
+  return randomAccount
 }
 
 function mergeCookies(existingCookies?: string, newCookie?: string): string {
@@ -152,7 +163,7 @@ function mergeCookies(existingCookies?: string, newCookie?: string): string {
   return mergedCookies
 }
 
-function parseCookies(cookieHeader: string): Record<string, string> {
+function parseCookies(cookieHeader: string, isGraphQL = false): Record<string, string> {
   const cookieList = cookieHeader.split(';')
   const cookieMap = cookieList.reduce((map, cookie) => {
     const [name, value] = cookie.trim().split('=')
