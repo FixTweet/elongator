@@ -88,11 +88,6 @@ async function handleRequest(request: Request): Promise<Response> {
         console.log(json.errors);
         console.log(`Account is not working, trying another one...`);
         errors = true;
-      } else {
-        console.log(`Response OK`);
-        // Print response and body
-        console.log(`Response: ${response.status} ${response.statusText}`);
-        console.log(`Body: `, decodedBody);
       }
 
       // if attempts over 5, return bad gateway
