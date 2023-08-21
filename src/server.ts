@@ -66,10 +66,6 @@ async function handleRequest(request: Request): Promise<Response> {
     headers.delete('Accept-Encoding');
 
     console.log(`newRequestInit`, newRequestInit);
-    // print out headers
-    for (var pair of headers.entries()) {
-      console.log(pair[0] + ': ' + pair[1]);
-    }
 
     newRequestInit.headers = headers;
 
