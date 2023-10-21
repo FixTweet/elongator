@@ -51,7 +51,7 @@ async function handleRequest(request: Request): Promise<Response> {
 
   do {
     errors = false;
-    const { authToken, csrfToken } = getRandomAccount();
+    const { authToken, csrfToken, username } = getRandomAccount();
     let newCookies = `auth_token=${authToken}`;
     /* If GraphQL request, we need to replace x-csrf-token and the ct0 cookie with saved csrfToken
        Unlike REST requests, GraphQL requests require a server csrf token. This restriction does not apply to guest token access. */
@@ -76,20 +76,51 @@ async function handleRequest(request: Request): Promise<Response> {
 
     try {
       attempts++;
+      console.log(`Attempt #${attempts} with account ${username}`);
       json = JSON.parse(decodedBody);
       if (json.errors) {
         console.log(json.errors);
         console.log(`Account is not working, trying another one...`);
         errors = true;
+
+        // NumericString value expected
+        if (json?.errors?.[0]?.code === 366) {
+          console.log('Status not found');
+          errors = false;
+          return new Response('Status not found', { status: 404 })
+          // Timeout: Unspecified
+        } else if (json?.errors?.[0]?.code === 29) {
+          console.log('Downstream fetch problem (Timeout), use fallback methods');
+          errors = false;
+          return new Response('Downstream fetch problem (Timeout), use fallback methods', { status: 502 })
+        } else if (json?.errors?.[0]?.name === 'DependencyError') {
+          console.log('Downstream fetch problem (DependencyError), use fallback methods');
+          errors = false;
+          return new Response('Downstream fetch problem (DependencyError), use fallback methods', { status: 502 })
+        } else if (json?.errors?.[0]?.message === 'ServiceUnavailable: Unspecified') {
+          console.log('Downstream fetch problem (ServiceUnavailable), use fallback methods');
+          errors = false;
+          return new Response('Downstream fetch problem (ServiceUnavailable), use fallback methods', { status: 502 })
+        } else if (json?.errors?.[0]?.name === 'DownstreamOverCapacityError') {
+          console.log('Downstream fetch problem (DownstreamOverCapacityError), use fallback methods');
+          errors = false;
+          return new Response('Downstream fetch problem (DownstreamOverCapacityError), use fallback methods', { status: 502 })
+        }
+        // Output to Discord webhook
       }
 
-      // if attempts over 5, return bad gateway
-      if (attempts > 5) {
-        return new Response('Bad Gateway', { status: 502 })
+      if (typeof json.data === 'undefined' && typeof json.translation === 'undefined') {
+        console.log(`No data was sent. Response code ${response.status}. Data sent`, json);
+        errors = true;
       }
     } catch (e) {
       console.log('Error parsing JSON:', e);
       errors = true;
+    }
+    
+    // if attempts over 5, return bad gateway
+    if (attempts > 5) {
+      return new Response('Maximum failed attempts reached', { status: 502 })
     }
   } while (errors);
  
@@ -115,7 +146,11 @@ async function handleRequest(request: Request): Promise<Response> {
 function isAllowlisted(apiUrl: string): boolean {
   const allowlist: string[] = [
     '/i/api/1.1/strato/column/None/tweetId',
-    '/i/api/graphql/2ICDjqPd81tulZcYrtpTuQ/TweetResultByRestId'
+    '/i/api/graphql/2ICDjqPd81tulZcYrtpTuQ/TweetResultByRestId',
+    '/i/api/graphql/mbnjGF4gOwo5gyp9pe5s4A/TweetResultByRestId',
+    '/i/api/graphql/g-nnNwMkZpmrGbO2Pk0rag/TweetDetail',
+    '/i/api/graphql/7xdlmKfKUJQP7D7woCL5CA/TweetDetail',
+    '/i/api/graphql/sLVLhk0bGj3MVFEKTdax1w/UserByScreenName'
   ]
 
   const endpointPath = new URL(apiUrl).pathname
