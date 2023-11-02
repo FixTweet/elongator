@@ -91,22 +91,21 @@ async function handleRequest(request: Request): Promise<Response> {
           // Timeout: Unspecified
         } else if (json?.errors?.[0]?.code === 29) {
           console.log('Downstream fetch problem (Timeout), use fallback methods');
-          errors = false;
+          errors = true;
           return new Response('Downstream fetch problem (Timeout), use fallback methods', { status: 502 })
         } else if (json?.errors?.[0]?.name === 'DependencyError') {
           console.log('Downstream fetch problem (DependencyError), use fallback methods');
-          errors = false;
+          errors = true;
           return new Response('Downstream fetch problem (DependencyError), use fallback methods', { status: 502 })
         } else if (json?.errors?.[0]?.message === 'ServiceUnavailable: Unspecified') {
           console.log('Downstream fetch problem (ServiceUnavailable), use fallback methods');
-          errors = false;
+          errors = true;
           return new Response('Downstream fetch problem (ServiceUnavailable), use fallback methods', { status: 502 })
         } else if (json?.errors?.[0]?.name === 'DownstreamOverCapacityError') {
           console.log('Downstream fetch problem (DownstreamOverCapacityError), use fallback methods');
-          errors = false;
+          errors = true;
           return new Response('Downstream fetch problem (DownstreamOverCapacityError), use fallback methods', { status: 502 })
         }
-        // Output to Discord webhook
       }
 
       if (typeof json.data === 'undefined' && typeof json.translation === 'undefined') {
