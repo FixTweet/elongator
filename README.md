@@ -4,7 +4,7 @@ Elongator is an internal proxying service used to circumvent Twitter's restricti
 
 Elongator works by stamping the incoming request with an auth_token and csrf token from a real Twitter account, and requests are spread out among many accounts for more even rate-limit wearing. For GraphQL requests, we also include valid per-account csrf tokens which is required for GraphQL functionality.
 
-You can pull the auth_token and csrf token from the headers of outgoing requests from your proxy account (i.e. Looking through Cookies or Network tab in your browser's dev tools)
+You can pull the auth_token and csrf token from the headers of outgoing requests from your proxy account (i.e. Looking through Cookies or Network tab in your browser's dev tools, auth token is `auth_token` and csrf is `ct0`)
 
 This method of implementation helps reduce a single point of failure, as Twitter cannot easily shut down elongator at-will without otherwise breaking the compatibiltiy of their API for existing clients, so we have a buffer to fix changes they may make as they arise.
 
