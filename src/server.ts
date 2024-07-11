@@ -48,6 +48,7 @@ async function handleRequest(request: Request): Promise<Response> {
   let json: any;
   let errors: boolean;
   let decodedBody: string;
+  let attempts = 0;
 
   do {
     errors = false;
@@ -72,7 +73,7 @@ async function handleRequest(request: Request): Promise<Response> {
     // Read the response body to create a new response with string version of body
     decodedBody = textDecoder.decode(await response.arrayBuffer()).match(/{.+}/)?.[0] || '{}';
 
-    var attempts = 0;
+    const statusId = request.url.match(/(?<=focalTweetId%22%3A%22)\d+(?=%)|(?<=tweetId=)\d+(?=,)/g)?.[0] ?? request.url;
 
     try {
       attempts++;
@@ -83,16 +84,24 @@ async function handleRequest(request: Request): Promise<Response> {
         console.log(`Account is not working, trying another one...`);
         errors = true;
 
-        // NumericString value expected
-        if (json?.errors?.[0]?.code === 366) {
+        if (response.status === 404) {
+          console.log('Status not found');
+          errors = false;
+          return new Response('Status not found', { status: 404 })
+          // Timeout: Unspecified
+        } else if (json?.errors?.[0]?.code === 366) {
+          console.log('Status not found');
+          errors = false;
+          return new Response('Status not found', { status: 404 })
+          // Timeout: Unspecified
+        } else if (json?.errors?.[0]?.code === 144) {
           console.log('Status not found');
           errors = false;
           return new Response('Status not found', { status: 404 })
           // Timeout: Unspecified
         } else if (json?.errors?.[0]?.code === 29) {
-          console.log('Downstream fetch problem (Timeout), use fallback methods');
-          errors = true;
-          return new Response('Downstream fetch problem (Timeout), use fallback methods', { status: 502 })
+          console.log('Downstream fetch problem (Timeout: Unspecified). Ignore this as this is usually not an issue.');
+          errors = false;
         } else if (json?.errors?.[0]?.name === 'DependencyError') {
           console.log('Downstream fetch problem (DependencyError), use fallback methods');
           errors = true;
@@ -105,11 +114,21 @@ async function handleRequest(request: Request): Promise<Response> {
           console.log('Downstream fetch problem (DownstreamOverCapacityError), use fallback methods');
           errors = true;
           return new Response('Downstream fetch problem (DownstreamOverCapacityError), use fallback methods', { status: 502 })
+        } else if (json?.errors?.[0]?.message === 'Internal: Unspecified') {
+          console.log('Downstream fetch problem (Internal: Unspecified). Ignore this as this is usually not an issue.');
+          errors = false;
+        } else if (json?.errors?.[0]?.message.includes('Denied by access control: Missing LdapGroup')) {
+          console.log('Downstream fetch problem (Authorization: Denied by access control: Missing LdapGroup). Ignore this as this is usually not an issue.');
+          errors = false;
         }
       }
 
       if (typeof json.data === 'undefined' && typeof json.translation === 'undefined') {
-        console.log(`No data was sent. Response code ${response.status}. Data sent`, json);
+        console.log(`No data was sent. Response code ${response.status}. Data sent`, JSON.stringify(json));
+        Object.keys(headers).forEach((key) => {
+          console.log(key, headers.get(key));
+        });
+
         errors = true;
       }
     } catch (e) {
@@ -145,10 +164,13 @@ async function handleRequest(request: Request): Promise<Response> {
 function isAllowlisted(apiUrl: string): boolean {
   const allowlist: string[] = [
     '/i/api/1.1/strato/column/None/tweetId',
+    '/1.1/live_video_stream/status/',
     '/i/api/graphql/2ICDjqPd81tulZcYrtpTuQ/TweetResultByRestId',
     '/i/api/graphql/mbnjGF4gOwo5gyp9pe5s4A/TweetResultByRestId',
+    '/i/api/graphql/Xl5pC_lBk_gcO2ItU39DQw/TweetResultByRestId',
     '/i/api/graphql/g-nnNwMkZpmrGbO2Pk0rag/TweetDetail',
     '/i/api/graphql/7xdlmKfKUJQP7D7woCL5CA/TweetDetail',
+    '/i/api/graphql/QVo2zKMcLZjXABtcYpi0mA/TweetDetail',
     '/i/api/graphql/sLVLhk0bGj3MVFEKTdax1w/UserByScreenName'
   ]
 
