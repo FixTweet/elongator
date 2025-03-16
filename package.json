@@ -4,10 +4,10 @@
   "description": "Twitter API Proxy to authenticate requests for FixTweet",
   "main": "dist/worker.js",
   "scripts": {
-    "build": "webpack",
-    "publish": "wrangler deploy",
+    "build": "node esbuild.config.mjs",
+    "publish": "wrangler deploy --no-bundle",
     "log": "wrangler tail",
-    "reload": "wrangler deploy && wrangler tail",
+    "reload": "wrangler deploy --no-bundle && wrangler tail",
     "prettier": "prettier --write .",
     "lint:eslint": "eslint --max-warnings=0 src",
     "test": "jest --config jestconfig.json --verbose"
@@ -15,32 +15,20 @@
   "author": "dangered wolf",
   "license": "MIT",
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20230404.0",
-    "@microsoft/eslint-formatter-sarif": "^3.0.0",
-    "@sentry/webpack-plugin": "^1.20.0",
-    "@types/jest": "^29.5.0",
-    "@typescript-eslint/eslint-plugin": "^5.57.1",
-    "@typescript-eslint/parser": "^5.57.1",
+    "@cloudflare/workers-types": "^4.20250313.0",
+    "@microsoft/eslint-formatter-sarif": "^3.1.0",
+    "@typescript-eslint/eslint-plugin": "^8.26.1",
+    "@typescript-eslint/parser": "^8.26.1",
     "delay": "^6.0.0",
-    "dotenv": "^16.0.3",
-    "eslint": "^8.37.0",
-    "eslint-config-prettier": "^8.8.0",
+    "dotenv": "^16.4.7",
+    "esbuild": "^0.25.1",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.1",
     "eslint-config-typescript": "^3.0.0",
     "eslint-plugin-optimize-regex": "^1.2.1",
-    "eslint-plugin-sonarjs": "^0.19.0",
-    "jest": "^29.5.0",
-    "jest-environment-miniflare": "^2.13.0",
-    "node-fetch": "^3.3.2",
-    "prettier": "^2.8.7",
-    "ts-jest": "^29.1.0",
-    "ts-loader": "^9.4.2",
-    "typescript": "^5.0.4",
-    "webpack": "^5.78.0",
-    "webpack-cli": "^5.0.1",
-    "wrangler": "^3.5.1"
-  },
-  "dependencies": {
-    "itty-router": "^3.0.12",
-    "toucan-js": "^2.7.0"
+    "eslint-plugin-sonarjs": "^0.25.1",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2",
+    "wrangler": "^4.0.0"
   }
 }
