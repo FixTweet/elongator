@@ -3,3 +3,5 @@ node_modules
 wrangler.toml
 .DS_Store
 credentials.json
+updatedCredentials.json
+credentials.suspended.json
