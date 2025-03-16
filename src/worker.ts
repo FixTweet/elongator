@@ -12,10 +12,10 @@ type CredentialList = {
 import _credentials from '../credentials.json';
 const credentials: CredentialList = _credentials;
 
-async function handleRequest(request: Request): Promise<Response> {
+async function handleRequest(request: Request, env: any, ctx: ExecutionContext): Promise<Response> {
   // Extract the URL of the Twitter API endpoint from the incoming request
   const url = new URL(request.url)
-  const apiUrl = `https://twitter.com${url.pathname}${url.search}`
+  const apiUrl = `https://x.com${url.pathname}${url.search}`
 
   // Check if the API endpoint is on the allowlist
   if (!isAllowlisted(apiUrl)) {
@@ -62,6 +62,7 @@ async function handleRequest(request: Request): Promise<Response> {
       headers.set('x-csrf-token', csrfToken);
     }
     const cookies = mergeCookies(existingCookies?.toString(), newCookies);
+
     headers.set('Cookie', cookies);
     headers.delete('Accept-Encoding');
 
@@ -78,6 +79,9 @@ async function handleRequest(request: Request): Promise<Response> {
     try {
       attempts++;
       console.log(`Attempt #${attempts} with account ${username}`);
+      if (statusId.length < 20) {
+        console.log(`Fetching status ID: ${statusId}`);
+      }
       json = JSON.parse(decodedBody);
       if (json.errors) {
         console.log(json.errors);
@@ -89,6 +93,10 @@ async function handleRequest(request: Request): Promise<Response> {
           errors = false;
           return new Response('Status not found', { status: 404 })
           // Timeout: Unspecified
+        } else if (json?.errors?.[0]?.message?.includes('No status found with that ID')) {
+          console.log('Status not found');
+          errors = false;
+          return new Response('Status not found', { status: 404 })
         } else if (json?.errors?.[0]?.code === 366) {
           console.log('Status not found');
           errors = false;
@@ -122,6 +130,39 @@ async function handleRequest(request: Request): Promise<Response> {
           errors = false;
         }
       }
+      
+      if (env.EXCEPTION_DISCORD_WEBHOOK && json.errors) {
+        fetch(env.EXCEPTION_DISCORD_WEBHOOK, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            embeds: [{
+              title: "Elongator Account Error",
+              description: "If this account is locked, please unlock it ASAP",
+              color: 0xFF0000, // Red color
+              fields: [
+                {
+                  name: "Account",
+                  value: username,
+                  inline: true
+                },
+                {
+                  name: "Errors",
+                  value: "```json\n" + JSON.stringify(json.errors, null, 2) + "\n```",
+                  inline: false
+                },
+                {
+                  name: "Status",
+                  value: statusId,
+                  inline: true
+                }
+              ]
+            }]
+          })
+        }).catch(err => console.error('Failed to send Discord webhook:', err));
+      }
 
       if (typeof json.data === 'undefined' && typeof json.translation === 'undefined') {
         console.log(`No data was sent. Response code ${response.status}. Data sent`, JSON.stringify(json));
@@ -137,7 +178,8 @@ async function handleRequest(request: Request): Promise<Response> {
     }
     
     // if attempts over 5, return bad gateway
-    if (attempts > 5) {
+    if (attempts > 3) {
+      console.log('Maximum failed attempts reached');
       return new Response('Maximum failed attempts reached', { status: 502 })
     }
   } while (errors);
@@ -220,6 +262,8 @@ function parseCookies(cookieHeader: string, isGraphQL = false): Record<string, s
   return cookieMap
 }
 
-addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request))
-})
+export default {
+  async fetch(request: Request, env: any, ctx: ExecutionContext): Promise<Response> {
+    return handleRequest(request, env, ctx);
+  }
+};
