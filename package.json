@@ -5,6 +5,7 @@
   "main": "dist/worker.js",
   "scripts": {
     "build": "node esbuild.config.mjs",
+    "strip": "node stripcredentials.mjs",
     "publish": "wrangler deploy --no-bundle",
     "log": "wrangler tail",
     "reload": "wrangler deploy --no-bundle && wrangler tail",

@@ -5,3 +5,4 @@ wrangler.toml
 credentials.json
 updatedCredentials.json
 credentials.suspended.json
+credentials.complete.json
