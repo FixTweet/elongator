@@ -138,6 +138,7 @@ async function handleRequest(request: Request, env: any, ctx: ExecutionContext):
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
+            content: `@everyone`,
             embeds: [{
               title: "Elongator Account Error",
               description: "If this account is locked, please unlock it ASAP",
