@@ -2,7 +2,6 @@ type Credentials = {
   authToken: string
   csrfToken: string
   username: string
-  password: string
 }
 
 type CredentialList = {
